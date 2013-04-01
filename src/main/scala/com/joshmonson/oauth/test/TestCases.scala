@@ -78,6 +78,13 @@ object TestCases {
       OAuthRequest(Some("OAuth realm=\"\",oauth_version=\"1.0\",oauth_consumer_key=\"dpf43f3p2l4k3l03\",oauth_timestamp=\"1364832782\",oauth_nonce=\"05BIxgmqUdG\",oauth_signature_method=\"HMAC-SHA1\",oauth_signature=\"AGe8ZI9RWjzqj7m7otFWrZuVdh8%3D\""),
         None, "http://www.example.com/", "", "", "GET", "/a/b/c"),
       "AGe8ZI9RWjzqj7m7otFWrZuVdh8="
+      ),
+
+    (
+      "Empty parameter",
+      OAuthKey("dpf43f3p2l4k3l03", "kd94hf93k423kf44", "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00"),
+      OAuthRequest(None, None, "http://photos.example.net", "file=&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0", "", "GET", "/photos"),
+      "nA8DOmbK7aNhJJEE6zAhaBHfPls="
       )
 
   )

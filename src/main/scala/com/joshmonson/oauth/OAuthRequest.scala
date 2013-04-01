@@ -128,7 +128,9 @@ case class OAuthRequest(
     val url = normalizeUrl
 
     // 9.1.3 Concatenate Request Elements
-    val baseString = OAuthUtil.getSignatureBaseString(url, method, parameters)
+//    val baseString = OAuthUtil.getSignatureBaseString(url, method, parameters)
+    val baseString = getSignatureBaseString(url, parameters)
+    println(baseString)
 
     // 9.2 HMAC-SHA1
     val signKey = OAuthUtil.encode(key.consumerSecret) + "&" + OAuthUtil.encode(key.tokenSecret)
@@ -141,6 +143,30 @@ case class OAuthRequest(
 
   // ==========================
   //      Helper functions
+
+  /**
+   * Generates the base string using the url, method, and parameters
+   * @param url The request url
+   * @param parameters The map of parameters
+   * @return The base string
+   */
+  def getSignatureBaseString(url: String, parameters: Map[String, String]): String = {
+    OAuthUtil.encode(method.toUpperCase) + "&" +
+      OAuthUtil.encode(OAuthUtil.normalizeUrl(url)) + "&" +
+      OAuthUtil.encode(normalizeParameters(parameters))
+  }
+
+  /**
+   * Calculates the normalized request parameters string to use in the base string
+   * @param parameters The map of parameters
+   * @return The normalized parameter string
+   */
+  def normalizeParameters(parameters: Map[String, String]): String = {
+    parameters.toList
+      .sortWith((d1, d2) => d1._1 < d2._1) // Sort the parameters by key
+      .map(d => OAuthUtil.encode(d._1) + "=" + OAuthUtil.encode(d._2)) // turn into key=value
+      .mkString("&") // Combine with ampersands
+  }
 
   /**
    * Creates the authorization header based on the computed signature
