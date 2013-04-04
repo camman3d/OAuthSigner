@@ -88,7 +88,7 @@ case class OAuthRequest(
    */
   def verify(implicit key: OAuthKey): Boolean = {
     val signaturePackage = getSignaturePackage
-    signaturePackage._1 == signaturePackage._4(OAuthValues.parameterNames.signature)
+    signaturePackage._5.isDefined && OAuthUtil.encode(signaturePackage._1) == signaturePackage._5.get
   }
 
   /**
@@ -99,14 +99,14 @@ case class OAuthRequest(
    * _3: Base String
    * _4: All parameters
    */
-  private var signaturePackage: Option[(String, String, String, Map[String, String])] = None
+  private var signaturePackage: Option[(String, String, String, Map[String, String], Option[String])] = None
 
   /**
    * Returns the signature package, generating and caching it if necessary
    * @param key An OAuthKey object containing the consumer and token
    * @return The signature package
    */
-  private def getSignaturePackage(implicit key: OAuthKey): (String, String, String, Map[String, String]) = {
+  private def getSignaturePackage(implicit key: OAuthKey): (String, String, String, Map[String, String], Option[String]) = {
     if (signaturePackage.isEmpty)
       signaturePackage = Some(generateSignaturePackage)
     signaturePackage.get
@@ -118,11 +118,15 @@ case class OAuthRequest(
    * @param key An OAuthKey object containing the consumer and token
    * @return The signature package
    */
-  private def generateSignaturePackage(implicit key: OAuthKey): (String, String, String, Map[String, String]) = {
+  private def generateSignaturePackage(implicit key: OAuthKey): (String, String, String, Map[String, String], Option[String]) = {
 
     // 9.1 Signature base string
     // 9.1.1 Normalize Request Parameters
-    val parameters = buildParameters
+    var parameters = buildParameters
+    val providedSignature = parameters.find(d => d._1 == OAuthValues.parameterNames.signature).map(_._2)
+
+    // Remove the signature param
+    parameters = parameters.filterKeys(_ != OAuthValues.parameterNames.signature)
 
     // 9.1.2 Construct Request URL
     val url = normalizeUrl
@@ -130,7 +134,6 @@ case class OAuthRequest(
     // 9.1.3 Concatenate Request Elements
 //    val baseString = OAuthUtil.getSignatureBaseString(url, method, parameters)
     val baseString = getSignatureBaseString(url, parameters)
-    println(baseString)
 
     // 9.2 HMAC-SHA1
     val signKey = OAuthUtil.encode(key.consumerSecret) + "&" + OAuthUtil.encode(key.tokenSecret)
@@ -138,7 +141,7 @@ case class OAuthRequest(
 
     // Return all the important info
     val authHeader = generateAuthHeader(signature, parameters)
-    (signature, authHeader, baseString, parameters)
+    (signature, authHeader, baseString, parameters, providedSignature)
   }
 
   // ==========================
@@ -297,9 +300,6 @@ case class OAuthRequest(
   private def buildParameters(implicit key: OAuthKey) = {
     // First collect the parameters from the various sources
     var parameters = collectParameters
-
-    // Remove the signature header
-    parameters = parameters.filterKeys(_ != OAuthValues.parameterNames.signature)
 
     // Add any missing oauth parameters
     parameters = addOauthParameters(parameters)
