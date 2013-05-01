@@ -9,13 +9,22 @@ object SignatureTester {
   def main(args: Array[String]) {
 
     var passed = 0
-    for ((name, key, request, signature) <- TestCases.all) {
+    for ((name, key, request, signature, verify) <- TestCases.all) {
       println("\n-------------------------------")
       println("Testing: " + name)
       val generatedSignature = request.getSignature(key)
       if (signature == generatedSignature) {
-        println("  PASSED!")
-        passed += 1
+        if (verify) {
+          if (request.verify(key)) {
+            println("  PASSED!")
+            passed += 1
+          } else {
+            println("  FAILED! Signatures matched, but verification failed.")
+          }
+        } else {
+          println("  PASSED!")
+          passed += 1
+        }
       } else
         println("  FAILED! Expected: " + signature + " Actual: " + generatedSignature)
     }
