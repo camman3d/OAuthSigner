@@ -127,13 +127,7 @@ case class OAuthRequest(
     // 9.1 Signature base string
     // 9.1.1 Normalize Request Parameters
     var parameters = buildParameters
-    val providedSignature = parameters.find(d => d._1 == OAuthValues.parameterNames.signature).map(s => {
-      val signature= s._2
-      if (!signature.contains("%"))
-        OAuthUtil.encode(signature)
-      else
-        signature
-    })
+    val providedSignature = parameters.find(d => d._1 == OAuthValues.parameterNames.signature).map(_._2)
 
     // Remove the signature param
     parameters = parameters.filterKeys(_ != OAuthValues.parameterNames.signature)
@@ -254,7 +248,12 @@ case class OAuthRequest(
    */
   private def getPostBodyParams: Map[String, String] = {
     if (contentTypeHeader.isDefined && contentTypeHeader.get.startsWith(OAuthValues.urlEncodedContentType))
-      OAuthUtil.parseQuerystring(body).toMap
+      OAuthUtil.parseQuerystring(body).map(data =>
+        if (data._1 == OAuthValues.parameterNames.signature)
+          (data._1, OAuthUtil.encode(data._2))
+        else
+          data
+      ).toMap
     else
       Map[String, String]()
   }
